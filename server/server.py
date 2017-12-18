@@ -21,17 +21,27 @@ class Score(threading.Thread):
                 job = self._list.pop()
                 # process here
                 print("Dang xu li. Student id = " + str(job.student_id))
-                exitcode, score, log = runtest.run_test_on_submit_dir(job.ass_id, job.student_id, job.timestamp)
 
-                # update database
                 conn = connect.getConnection()
                 cursor = conn.cursor()
-                sql = "UPDATE submit SET status = %s, score = %s, log = %s WHERE assignment_id = %s AND student_id = %s AND time = %s"
-                query = cursor.execute(sql, (exitcode, score, log, job.ass_id, job.student_id, job.timestamp))
+
+                sql = "UPDATE submit SET status = %s WHERE assignment_id = %s AND student_id = %s AND time = %s"
+                query = cursor.execute(sql, ("g", job.ass_id, job.student_id, job.timestamp))
+                conn.commit()
+
+                exitcode, score, log = runtest.run_test_on_submit_dir(job.ass_id, job.student_id, job.timestamp)
+                eval_score = 0
+                if not exitcode:
+                    eval_score = str(10.0 * eval(score))
+
+                # update database
+                sql = "UPDATE submit SET status = %s, score = %s, log = %s, eval_score = %s WHERE assignment_id = %s AND student_id = %s AND time = %s"
+                query = cursor.execute(sql, (exitcode, score, log, eval_score, job.ass_id, job.student_id, job.timestamp))
                 conn.commit()
                 conn.close()
 
                 print("OK: ")
+                time.sleep(10)
             self._list_lock.release()
 
 
@@ -40,9 +50,17 @@ class Scan(threading.Thread):
         threading.Thread.__init__(self)
         self._list = list_student  # list of number from 2 to N
         self._list_lock = list_lock  # Lock for list_num
+
+        # self._conn =  connect.getConnection()
+        # self._cursor = self._conn.cursor()
+        # use socket
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((socket.gethostname(), 10000))
         self.server.listen(1)
+
+        # use database
+
+
 
     def run(self):
         # request to access shared resource
@@ -51,12 +69,21 @@ class Scan(threading.Thread):
         while True:
             conn, client = self.server.accept()
             try:
-                # print ("Connection from", client)
+                print ("Connection from", client)
                 data = conn.recv(1024)
-                # print ("Receive from client:", data)
+                print ("Receive from client:", data)
                 conn.sendall(data)
                 s = data.decode('utf-8')
                 info = str(s).split("|")
+
+                # sql = "SELECT * FROM submit WHERE status=%s"
+                # query = self._cursor.execute(sql, ("w"))
+                # for i in range(query):
+                #     res = self._cursor.fetchone()
+                #     id = res["id"]
+                #     std_id = res["student_id"]
+
+
                 job = heap_struct.Job(info[0], info[1], info[2], info[3])
                 print(s)
                 self._list_lock.acquire()
@@ -66,11 +93,3 @@ class Scan(threading.Thread):
                 conn.close()
 
 
-list_student = heap_struct.Heap()
-list_lock = threading.Lock()
-
-thread_score = Score(list_student, list_lock)
-thread_score.start()
-
-thread_scan = Scan(list_student, list_lock)
-thread_scan.start()
