@@ -41,7 +41,7 @@ class Score(threading.Thread):
                 conn.close()
 
                 print("OK: ")
-                time.sleep(10)
+
             self._list_lock.release()
 
 

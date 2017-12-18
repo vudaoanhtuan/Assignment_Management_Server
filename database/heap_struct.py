@@ -1,10 +1,10 @@
 class Job:
-    def __init__(self, ass_id, student_id, timestamp, priority):
+    def __init__(self, ass_id, student_id, timestamp, priority, submit_id):
         self.priority = priority
         self.timestamp = timestamp
         self.student_id = student_id
         self.ass_id = ass_id
-
+        self.submit_id = submit_id
 
     def isLessThan(self, job):
         job.__class__ = Job
@@ -61,3 +61,9 @@ class Heap:
         self.last = self.last - 1
         self.downHeap(0)
         return t
+
+    def find(self, submit_id):
+        for i in range(self.length):
+            if self.heap[i].submit_id == submit_id:
+                return True
+        return False

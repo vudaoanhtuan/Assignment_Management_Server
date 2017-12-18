@@ -4,7 +4,7 @@ num_threads = 2
 
 # server
 
-from server.server import *
+from server.server2 import *
 print("Server is running")
 
 list_student = heap_struct.Heap()

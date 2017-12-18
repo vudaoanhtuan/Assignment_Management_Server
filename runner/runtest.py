@@ -116,6 +116,8 @@ def run_test_on_submit_dir(ass_id, student_id, submit_dir_name):
             output_file = con.testcase_dir + "/" + current_testcase + "/output"
 
             student_output_file = student_output_dir + "/" + current_testcase
+            student_output_log = student_output_file + ".log"
+
             cml = exe_file + " < " + input_file + " > " + student_output_file
             command_line = command.Command(cml, input_file, student_output_file)
             run_error = command_line.run(timeout=con.limit_time)
@@ -125,15 +127,22 @@ def run_test_on_submit_dir(ass_id, student_id, submit_dir_name):
             cfloat = (modecheck[2] == "1")
             precision = int(modecheck[4:])
 
+            if run_error:
+                error_log = open(student_output_log, "w")
+                error_log.write("Time Limit Error")
+                error_log.close()
+                list_score.append((current_testcase, 0))
 
-            if not run_error and checkfile.isSameFile(output_file, student_output_file, chard, ccase, cfloat, precision):
+            elif checkfile.isSameFile(output_file, student_output_file, student_output_log, chard, ccase, cfloat, precision):
                 list_score.append((current_testcase, 1))
                 score = score + 1
             else:
                 list_score.append((current_testcase, 0))
 
+
+
         score_file = open(time_dir + "/score.log", "w")
-        percen = str(score) + "/" + str(len(list_score))
+        percen = str(score) + "/" + str(len(list_testcase))
         score_file.write(percen + "\n")
         for i in list_score:
             score_file.write(str(i[0]) + " " + str(i[1]) + "\n")
